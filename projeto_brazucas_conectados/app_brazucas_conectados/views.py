@@ -1,4 +1,4 @@
 from django.shortcuts import render
 
-def noticiasBrazucasConectados(request):
-    return render(request, 'noticias/noticiasBrazucasConectados.html')
+def noticias(request):
+    return render(request, 'noticias/noticias_brazucas_conectados.html')
