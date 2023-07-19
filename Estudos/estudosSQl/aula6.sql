@@ -147,3 +147,12 @@ INSERT INTO tb_formando_emprego
 VALUES (1,1,1);
 
 SELECT * FROM tb_formando_emprego;
+
+DROP PROCEDURE IF EXISTS p_crd;
+CREATE PROCEDURE p_crd(IN a int, b int)
+BEGIN
+    SET @rest = a % b;
+    SELECT @rest AS result;
+END;
+
+CALL p_crd(7,4);
