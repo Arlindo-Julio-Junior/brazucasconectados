@@ -16,6 +16,9 @@ END;
 
 
 
+SELECT COUNT(pais) INTO @menor
+FROM tb_aeroporto
+WHERE pais IN ('França');
 
 
 

@@ -636,7 +636,3 @@ SELECT * FROM tb_aeroporto_atualizado;
 
 -- ********Grupo 4***********
 
-SELECT * FROM tb_modelo;
-SELECT * FROM tb_aviao;
-SELECT * FROM v_aviao;
-SELECT * FROM v_modelo;
