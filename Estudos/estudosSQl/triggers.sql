@@ -125,3 +125,8 @@ DELETE from tb_formando WHERE idFormando = 3;
 SELECT * FROM tb_formando;
 
 SELECT * FROM trg_apagar_formando;
+
+
+SELECT nome  Tripulacao from tb_barco
+WHERE idBarco in (5);
+ORDER BY 1 desc;

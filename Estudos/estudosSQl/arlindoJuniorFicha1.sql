@@ -65,41 +65,58 @@ SELECT * FROM v_aeroporto;
 
 CREATE TABLE tb_modelo(
     idModelo INT not null auto_increment,
-    fabricante varchar(50) not null,
+    idFabricante int not null,
     versao varchar(50) not null,
     numMotores int not null,
     PRIMARY KEY(idModelo),
-    UNIQUE fv(fabricante,versao)
+    UNIQUE fv(idFabricante,versao, numMotores)
+);
+-- alterei o fabricante para idFabricante
+DESCRIBE tb_modelo;
+
+SELECT * from tb_modelo;
+
+-- ************* grupo 4 *****************
+
+-- drop TABLE if EXISTS tb_fabricante;
+CREATE table tb_fabricante(
+    idFabricante int not null AUTO_INCREMENT PRIMARY KEY,
+    fabricante varchar(50),
+    UNIQUE(fabricante)
 );
 
-DESCRIBE tb_modelo;
+insert into tb_fabricante VALUES(null, 'Airbus');
+insert into tb_fabricante VALUES(null, 'Boeing');
+insert into tb_fabricante VALUES(null, 'Douglas');
+
+SELECT * from tb_fabricante;
 
 -- questão 3.2
 
--- DROP procedure if EXISTS p_modelo;
+DROP procedure if EXISTS p_modelo;
 
-CREATE procedure p_modelo (in a text, in b text, in c int)
+CREATE procedure p_modelo (in a int, in b text, in c int)
 BEGIN
     declare total1 INT;
     declare total2 int;
     declare msg TEXT;
 
-    SELECT count(fabricante), count(versao) into total1, total2
-    from tb_modelo where fabricante = a and versao = b and numMotores = c;
+    SELECT count(idFabricante), count(versao) into total1, total2
+    from tb_modelo where idFabricante = a and versao = b and numMotores = c;
     if total1 = 1 and total2 = 1 THEN
         set msg = -1;
     ELSE
-        insert into tb_modelo (idModelo,fabricante, versao, numMotores) values(null, a, b, c);
+        insert into tb_modelo (idModelo,idFabricante, versao, numMotores) values(null, a, b, c);
         SET msg = 1;
     end If;
     SELECT msg as result;
 END;
 
-CALL p_modelo ('Douglas', 'DC-10', 3);
-CALL p_modelo ('Boeing', '737', 2);
-CALL p_modelo ('Boeing', '747', 4);
-CALL p_modelo ('Airbus', 'A300', 2);
-CALL p_modelo ('Airbus', 'A340', 4);
+CALL p_modelo (3, 'DC-10', 3);
+CALL p_modelo (2, '737', 2);
+CALL p_modelo (2, '747', 4);
+CALL p_modelo (1, 'A300', 2);
+CALL p_modelo (1, 'A340', 4);
 
 SELECT * FROM tb_modelo;
 
@@ -108,7 +125,8 @@ SELECT * FROM tb_modelo;
 -- drop view if exists v_modelo;
 
 create view v_modelo as SELECT fabricante,
-versao, numMotores from tb_modelo;
+versao, numMotores from tb_modelo
+join tb_fabricante on tb_fabricante.idFabricante = tb_modelo.idFabricante;
 
 SELECT * from v_modelo;
 
@@ -161,13 +179,36 @@ SELECT * FROM tb_aviao;
 -- questão 4.3
 SELECT * from tb_modelo;
 SELECT * from tb_aviao;
+SELECT * from tb_fabricante;
 
 -- DROP VIEW if EXISTS v_aviao;
-create VIEW v_aviao as 
-SELECT fabricante, versao, numMotores, nome from tb_modelo JOIN tb_aviao on
-tb_modelo.idModelo = tb_aviao.idModelo;
+create view v_aviao AS
+SELECT fabricante, versao, numMotores, ifnull(tb_aviao.nome, 'Não existe') as nome
+from tb_modelo LEFT JOIN tb_aviao on
+tb_modelo.idModelo = tb_aviao.idModelo JOIN
+tb_fabricante on tb_fabricante.idFabricante = tb_modelo.idFabricante;
 
-SELECT * FROM v_aviao;
+SELECT * FROM v_aviao
+ORDER BY fabricante DESC;
+
+-- ************* grupo 4 *****************
+
+-- drop TABLE if EXISTS tb_companhia;
+CREATE table tb_companhia(
+    idCompanhia int not null AUTO_INCREMENT PRIMARY KEY,
+    companhia varchar(50),
+    UNIQUE(companhia)
+);
+
+describe tb_companhia;
+
+insert into tb_companhia VALUES(null, 'TAP');
+insert into tb_companhia VALUES(null, 'BA');
+insert into tb_companhia VALUES(null, 'SATA');
+insert into tb_companhia VALUES(null, 'AirFrance');
+insert into tb_companhia VALUES(null, 'Portugalia');
+
+SELECT * from tb_companhia;
 
 -- questão 5.1
 
@@ -177,45 +218,49 @@ CREATE TABLE tb_voo(
     idAviao int not null,
     idAeroportoPartida int not null,
     idAeroportoChegada int not null,
-    companhia VARCHAR(50) not null,
+    idCompanhia int not null,
     duracao DECIMAL not NULL,
     PRIMARY key(idVoo)
 );
 
 DESCRIBE tb_voo;
 
+SELECT * from tb_voo;
+
 -- questão 5.2
 
+SELECT * from tb_companhia;
+
 -- drop procedure if EXISTS p_voo;
-CREATE procedure p_voo (in a int, b int, c int, d int, e text, f float)
+CREATE procedure p_voo (in a int, b int, c int, d int, e int, f float)
 BEGIN
     declare total int;
     declare msg text;
 
     SELECT count(idVoo) into total from tb_voo 
     where idVoo = a and idAviao = b and idAeroportoPartida = c AND
-    idAeroportoChegada = d and companhia = e and duracao = f;
+    idAeroportoChegada = d and idCompanhia = e and duracao = f;
     if total = 1 THEN
         set msg = "já existe";
     ELSE
         insert into tb_voo(idVoo, idAviao, idAeroportoPartida, idAeroportoChegada,
-        companhia, duracao) VALUES (a, b, c, d, e, f);
+        idCompanhia, duracao) VALUES (a, b, c, d, e, f);
         set msg = "cadastrado";
     end if;
     SELECT msg as result;
 END;
 
-CALL p_voo (1001, 1, 1, 2,'TAP', 2);
-CALL p_voo (1002, 2, 2, 3,'TAP', 1);
-CALL p_voo (1003, 5, 2, 12,'BA', 2);
-CALL p_voo (1004, 6, 4, 3, 'SATA', 3);
-CALL p_voo (1005, 3, 9, 2,'AirFrance', 2);
-CALL p_voo (1006, 5, 8, 11,'BA', 1);
-CALL p_voo (1007, 5, 5, 1, 'TAP',1);
-CALL p_voo (1008, 4, 3, 12,'Portugalia', 3);
-CALL p_voo (1009, 1, 3, 4, 'Portugalia',2);
-CALL p_voo (1010, 1, 4, 12,'BA', 3);
-CALL p_voo (1111, 3, 1, 3,'TAP', 2);
+CALL p_voo (1001, 1, 1, 2, 1, 2);
+CALL p_voo (1002, 2, 2, 3, 1, 1);
+CALL p_voo (1003, 5, 2, 12, 2, 2);
+CALL p_voo (1004, 6, 4, 3, 3, 3);
+CALL p_voo (1005, 3, 9, 2, 4, 2);
+CALL p_voo (1006, 5, 8, 11, 2, 1);
+CALL p_voo (1007, 5, 5, 1, 1,1);
+CALL p_voo (1008, 4, 3, 12, 5, 3);
+CALL p_voo (1009, 1, 3, 4, 5,2);
+CALL p_voo (1010, 1, 4, 12, 2, 3);
+CALL p_voo (1111, 3, 1, 3, 1, 2);
 
 SELECT * FROM tb_voo;
 
@@ -258,9 +303,10 @@ SELECT * FROM tb_aviao;
 CREATE view v_voo AS 
 SELECT idvoo, cidadePartida, paisPartida,
 cidadeChegada, paisChegada, nome,
-fabricante, versao, numMotores FROM v_partidasChegadas
+Fabricante, versao, numMotores FROM v_partidasChegadas
  JOIN tb_aviao USING (idAviao) 
- JOIN tb_modelo using (idModelo);
+ JOIN tb_modelo using (idModelo)
+ join tb_fabricante USING (idFabricante);
 
  SELECT * from v_voo;
 
@@ -312,18 +358,22 @@ where numMotores in(SELECT max(numMotores)
 -- questão 4.1
 
 SELECT * FROM tb_voo;
+SELECT * from tb_companhia;
 
-SELECT *
-FROM tb_voo
-WHERE duracao IN (3, 2);
+SELECT idVoo, idAviao, idAeroportoPartida, idAeroportoChegada,
+companhia, duracao from tb_voo join tb_companhia
+using (idCompanhia)
+WHERE duracao in (3, 2);
 
 -- questão 4.2
 SELECT * FROM tb_voo;
 SELECT * FROM tb_aeroporto;
 
-SELECT *
+SELECT idVoo, idAviao, idAeroportoPartida, idAeroportoChegada,
+companhia, duracao, idAeroporto, nome, cidade, pais
 FROM tb_voo
 JOIN tb_aeroporto ON tb_voo.idAeroportoPartida = tb_aeroporto.idAeroporto
+join tb_companhia USING (idCompanhia)
 WHERE duracao IN (2)
   AND idAeroportopartida IN (1);
 
@@ -332,6 +382,7 @@ WHERE duracao IN (2)
 SELECT * FROM tb_modelo;
 
 SELECT versao, fabricante, numMotores from tb_modelo
+join tb_fabricante USING (idFabricante)
 WHERE versao like '%A3%';
 
 -- questão 6
@@ -339,6 +390,7 @@ WHERE versao like '%A3%';
 SELECT * from tb_voo;
 
 SELECT idVoo, companhia, duracao from tb_voo
+JOIN tb_companhia using (idCompanhia)
 ORDER BY duracao DESC;
 
 -- questão 7.1
@@ -369,11 +421,15 @@ where idAeroportoPartida in (1)) as Porto JOIN (SELECT idVoo as idVooEscala, idA
  WHERE idAeroportoChegada in (11,12)) as Londres
 on Porto.idAeroportoChegada = Londres.idAeroportoPartida;
 
+SELECT * from v_porto_londres;
+
 -- drop VIEW if EXISTS v_porto;
 create VIEW v_porto as 
 SELECT nome as Porto, idVooPorto, idAeroportoEscala from v_porto_londres
 join tb_aeroporto
 on idAeroporto = idAeroportoPartida;
+
+SELECT * from v_porto;
 
 
 -- drop VIEW if EXISTS v_escala;
@@ -382,6 +438,8 @@ SELECT nome as Escala, idVooEscala, idAeroportoEscala
 FROM v_porto_londres
 join tb_aeroporto
 on idAeroporto = idAeroportoEscala;
+
+SELECT * FROM v_escala;
 
 
 -- drop VIEW if EXISTS v_londres;
@@ -395,7 +453,7 @@ SELECT * FROM v_londres;
 SELECT * from v_escala, v_porto
 WHERE v_escala.idAeroportoEscala = v_porto.idAeroportoEscala;
 
-SELECT * from v_porto
+SELECT porto, idVooPorto, escala, idVooEscala, Londres from v_porto
 join v_escala USING (idAeroportoEscala)
 JOIN v_londres using (idAeroportoEscala);
 
@@ -506,6 +564,7 @@ SELECT * from tb_modelo;
 
 SELECT fabricante, versao, count(idAviao) 
 as total from tb_modelo join tb_aviao USING(idModelo)
+JOIN tb_fabricante using (idFabricante)
 GROUP BY idModelo
 ORDER BY total DESC;
 
@@ -516,13 +575,14 @@ SELECT * from tb_modelo;
 
 SELECT fabricante, versao, count(tb_aviao.idModelo) as total
 from tb_modelo
-left join tb_aviao ON tb_modelo.idModelo = tb_aviao.idModelo
-group by tb_aviao.idModelo
+join tb_fabricante USING (idFabricante)
+left join tb_aviao USING (idModelo)
+group by idModelo
 ORDER BY total DESC;
 
 -- questão 16
 
--- DROP TABLE if EXISTS tb_companhia;
+/* DROP TABLE if EXISTS tb_companhia;
 CREATE TABLE tb_companhia(
     idCompanhia int AUTO_INCREMENT PRIMARY KEY,
     companhia varchar(50)
@@ -531,9 +591,13 @@ describe tb_companhia;
 
 insert into tb_companhia (idCompanhia, companhia)
 VALUES(1, 'TAP'), (2, 'BA'), (3, 'SATA'), (4, 'AirFrance'),
-(5, 'Portugalia');
+(5, 'Portugalia'); */
 
-SELECT * from tb_companhia;
+/* O código acima só era necessário na primeira fase do exercício quando 
+ainda não existia a tabela tb_companhia separada da tabla tb_voo */
+
+SELECT * from tb_companhia
+ORDER by idCompanhia;
 
 -- ******* Grupo 3 *******
 -- questão 1.1
@@ -633,10 +697,3 @@ SELECT * FROM tb_aeroporto WHERE nome = 'Aeroporto do Motijo';
 UPDATE tb_aeroporto set cidade = 'Motijo' WHERE nome = 'Aeroporto do Motijo';
 
 SELECT * FROM tb_aeroporto_atualizado;
-
--- ********Grupo 4***********
-
-SELECT * FROM tb_modelo;
-SELECT * FROM tb_aviao;
-SELECT * FROM v_aviao;
-SELECT * FROM v_modelo;
